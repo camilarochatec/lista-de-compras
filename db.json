@@ -1,0 +1,66 @@
+{
+  "listas": [
+    {
+      "id": "0379",
+      "nome": "lista 1",
+      "itens": [
+        {
+          "id": "64f2",
+          "name": "feijão",
+          "quantidade": 1,
+          "comprado": false
+        }
+      ]
+    }
+  ],
+  "produtos_cadastrados": [
+    {
+      "id": "1",
+      "name": "Leite Integral"
+    },
+    {
+      "id": "2",
+      "name": "Pão de Forma"
+    },
+    {
+      "id": "3",
+      "name": "Arroz 1kg"
+    },
+    {
+      "id": "5",
+      "name": "Macarrão 500g"
+    },
+    {
+      "id": "6",
+      "name": "Creme de Leite"
+    },
+    {
+      "id": "7",
+      "name": "chocolate em pó"
+    },
+    {
+      "id": "8",
+      "name": "desinfetante"
+    },
+    {
+      "id": "6182",
+      "name": "desodorante"
+    },
+    {
+      "id": "3a46",
+      "name": "queijo"
+    },
+    {
+      "id": "86d8",
+      "name": "frango"
+    },
+    {
+      "id": "64f2",
+      "name": "feijão"
+    },
+    {
+      "id": "1b92",
+      "name": "agua sanitária"
+    }
+  ]
+}
