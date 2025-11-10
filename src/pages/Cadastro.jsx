@@ -5,11 +5,12 @@ import { IoArrowBack, IoAddCircleOutline, IoSearchOutline, IoTrashBinOutline } f
 import { BiPlus, BiMinus } from 'react-icons/bi';
 import { useListas } from '../context/ListasContext';
 
-const Cadastro = () => {
-    //  Pegamos os produtos e funções da API (do Contexto). são funções globais.
-    const { adicionarNovaLista, produtosCadastrados, adicionarNovoProdutoGlobal } = useListas();
+const API_URL = "http://localhost:3001"; // URL da API
 
-    //nosso gps
+const Cadastro = () => {
+    //  Pegamos 'setTodasAsListas' e etc... do contexto
+    const { setTodasAsListas, produtosCadastrados, adicionarNovoProdutoGlobal } = useListas();
+
     const navigate = useNavigate();
 
     // Estados locais para o formulário
@@ -18,14 +19,14 @@ const Cadastro = () => {
     const [campoDeBuscaDeProdutos, setcampoDeBuscaDeProdutos] = useState(''); //guarda o texto do campo de busca
 
     // 'pesquisar'  usa 'produtosCadastrados' (da API)
-    //usei o hook useMemo para memorizar o resultado da pesquisa com base nas dependências fornecidas.
+    //o hook useMemo memoriza o resultado da pesquisa com base nas dependências fornecidas.
     const pesquisar = useMemo(() => {
         if (!campoDeBuscaDeProdutos) return [];
         return produtosCadastrados.filter(p =>
             p.name.toLowerCase().includes(campoDeBuscaDeProdutos.toLowerCase())
             //p é o padrão do filter, representa cada produto no array produtosCadastrados. o includes verifica se o nome do produto contém o texto buscado.
         );
-    // Adicionamos 'produtosCadastrados' como dependência
+        // Adicionamos 'produtosCadastrados' como dependência
     }, [campoDeBuscaDeProdutos, produtosCadastrados]);
 
     // Função "segura" para adicionar itens na lista LOCAL
@@ -40,63 +41,95 @@ const Cadastro = () => {
         });
     };
 
-    const qtd = (produtoId, quantia) => {
-        setprodutosAdicionadosNaLista(produtosAdicionadosNaLista.map(p =>
+const qtd = (produtoId, quantia) => {
+    setprodutosAdicionadosNaLista(prevLista => // <--- Use (prevLista => ...)
+        prevLista.map(p =>
             p.id === produtoId ? { ...p, quantidade: Math.max(1, p.quantidade + quantia) } : p
-        ));
-    };
+        )
+    );
+};
 
-    const removerProduto = (produtoId) => {
-        setprodutosAdicionadosNaLista(produtosAdicionadosNaLista.filter(p => p.id !== produtoId));
-    };
+const removerProduto = (produtoId) => {
+    setprodutosAdicionadosNaLista(prevLista => // <--- Use (prevLista => ...)
+        prevLista.filter(p => p.id !== produtoId)
+    );
+};
 
+    //função para salvar a lista na API
     const salvarLista = () => {
         if (!NomeListaCadastrada.trim()) {
             alert('Por favor, dê um nome para a sua lista.');
             return;
         }
+
         const novaListaData = {
-            nome: NomeListaCadastrada,
+            nome: NomeListaCadastrada.trim(), // <- Adicionado .trim()
             itens: produtosAdicionadosNaLista,
+            // (o json-server vai adicionar um 'id' automaticamente)
         };
-        adicionarNovaLista(novaListaData);
-        navigate('/');
+
+        // Lógica da API, usando .then()
+        fetch(`${API_URL}/listas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(novaListaData),
+        })
+            .then(res => res.json())
+            .then(data => {
+                // 'data' é a nova lista que o servidor acabou de criar (já com id)
+                // Atualizamos o estado global
+                setTodasAsListas(prevListas => [...prevListas, data]);
+                alert("Lista salva com sucesso!");
+                navigate('/'); // Navega para a home
+            })
+            .catch(error => {
+                console.error("Falha ao salvar lista:", error);
+                alert("Não foi possível salvar a lista.");
+            });
+    };
+
+    const goBack = () => navigate(-1);
+
+    // atalho 'handleCriarNovoProduto'
+   const handleCriarNovoProduto = () => {
+    if (!campoDeBuscaDeProdutos.trim()) return;
+
+    const nomeBusca = campoDeBuscaDeProdutos.toLowerCase().trim();
+
+    // 1. Checa se o item já está na lista local
+    const jaExisteNaListaLocal = produtosAdicionadosNaLista.find(p => p.name.toLowerCase() === nomeBusca);
+    if (jaExisteNaListaLocal) {
+        alert("Este item já está na sua lista.");
+        setcampoDeBuscaDeProdutos('');
+        return;
+    }
+
+    // 2. Checa se o item existe na API (global)
+    const jaExisteNaAPIGlobal = produtosCadastrados.find(p => p.name.toLowerCase() === nomeBusca);
+    if (jaExisteNaAPIGlobal) {
+        addProdutoNaListaLocal(jaExisteNaAPIGlobal);
+        setcampoDeBuscaDeProdutos('');
+        return;
+    }
+
+    // 3. Se não existe em lugar nenhum, cria um produto TEMPORÁRIO
+    const produtoTemporario = {
+        id: `temp_${Date.now()}`, // ID temporário (só para o React não reclamar da 'key')
+        name: campoDeBuscaDeProdutos.trim(),
+        isNovo: true // <--- Flag MUITO importante
     };
     
-    const goBack = () => navigate(-1);
-    
+    // 4. Adiciona o produto temporário na lista local
+    addProdutoNaListaLocal(produtoTemporario);
+    setcampoDeBuscaDeProdutos(''); // Limpa a busca
+};
+
     // 5. Função para o clique em um produto que JÁ EXISTE
     const handleSelecionarProdutoExistente = (produto) => {
-        addProdutoNaListaLocal(produto); 
+        addProdutoNaListaLocal(produto);
         setcampoDeBuscaDeProdutos(''); // Limpa a busca
     };
 
-    // 6. Função para o clique em "Criar novo produto"
-    const handleCriarNovoProduto = async () => {
-        if (!campoDeBuscaDeProdutos.trim()) return;
-
-        const nomeBusca = campoDeBuscaDeProdutos.toLowerCase();
-        // Verifica se já existe (para evitar duplicados)
-        const produtoExistente = produtosCadastrados.find(p => p.name.toLowerCase() === nomeBusca);
-        
-        let produtoParaAdicionar;
-
-        if (produtoExistente) {
-            produtoParaAdicionar = produtoExistente;
-        } else {
-            // Se não existe, cria na API
-            const novoProduto = await adicionarNovoProdutoGlobal(campoDeBuscaDeProdutos);
-            if (novoProduto) {
-                produtoParaAdicionar = novoProduto;
-            }
-        }
-
-        // Adiciona na lista local e limpa a busca
-        if (produtoParaAdicionar) {
-            addProdutoNaListaLocal(produtoParaAdicionar);
-        }
-        setcampoDeBuscaDeProdutos('');
-    };
 
     return (
         <div className="bg-amber-100 min-h-screen">
@@ -132,22 +165,22 @@ const Cadastro = () => {
 
                     {campoDeBuscaDeProdutos && (
                         <div className="mt-2 border rounded-lg bg-white max-h-48 overflow-y-auto">
-                            
+
                             {/* onClick para CRIAR */}
-                            <div 
-                                onClick={handleCriarNovoProduto} 
-                                className="flex justify-between items-center p-3 hover:bg-amber-50 cursor-pointer text-amber-600 font-bold"
+                            <div
+                                onClick={handleCriarNovoProduto}
+                                className="flex justify-between items-center p-3 hover:bg-amber-50  text-amber-600 font-bold"
                             >
                                 <span>Criar novo produto: "{campoDeBuscaDeProdutos}"</span>
                                 <IoAddCircleOutline size={24} />
                             </div>
-                            
+
                             {/* onClick para SELECIONAR */}
                             {pesquisar.map(produto => (
-                                <div 
-                                    key={produto.id} 
-                                    onClick={() => handleSelecionarProdutoExistente(produto)} 
-                                    className="flex justify-between items-center p-3 hover:bg-amber-50 cursor-pointer border-b"
+                                <div
+                                    key={produto.id}
+                                    onClick={() => handleSelecionarProdutoExistente(produto)}
+                                    className="flex justify-between items-center p-3 hover:bg-amber-50 border-b"
                                 >
                                     <span>{produto.name}</span>
                                     <IoAddCircleOutline className="text-green-500" size={24} />
@@ -158,7 +191,7 @@ const Cadastro = () => {
                 </div>
 
 
-                {/* 3. ITENS JÁ ADICIONADOS NA LISTA */}
+                {/*  ITENS JÁ ADICIONADOS NA LISTA */}
                 <div className="bg-white p-4 rounded-lg shadow">
                     <h2 className="text-lg font-bold text-gray-700 mb-3">Itens na Lista ({produtosAdicionadosNaLista.length})</h2>
                     {produtosAdicionadosNaLista.length === 0 ? (
@@ -186,7 +219,7 @@ const Cadastro = () => {
                         onClick={salvarLista}
                         className="w-full bg-amber-400 text-amber-900 font-bold py-4 px-8 rounded-full shadow-md hover:bg-amber-500 transition-colors"
                     >
-                        Salvar Lista Completa
+                        Salvar Lista
                     </button>
                 </div>
             </main>

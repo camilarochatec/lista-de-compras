@@ -7,12 +7,12 @@ import { BsBagX } from "react-icons/bs";
 import { useListas } from '../context/ListasContext';
 
 const Home = () => {
-    // buscamos as listas e funções do contexto. a logica está toda lá.
+    // a lógica está no contexto!
     const { todasAsListas, excluirLista, editarLista } = useListas();
 
     const navigate = useNavigate();
-    
-    //uma especie de "atalho" para a página de cadastro de uma lista
+
+    // "atalho" para a página de cadastro de uma lista
     const handleCriarLista = () => {
         navigate('/cadastro');
         //navega para a página de cadastro. no path.jsx está a rota que leva para o componente Cadastro.jsx

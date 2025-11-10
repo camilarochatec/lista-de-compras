@@ -1,13 +1,14 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useMemo } from "react"; // 1. Importe o useMemo
 
 const ListasContext = createContext();
-const API_URL = "http://localhost:3001"; 
+const API_URL = "http://localhost:3001";
 
 export const ListasProvider = ({ children }) => {
-    
+
     const [todasAsListas, setTodasAsListas] = useState([]);
     const [produtosCadastrados, setProdutosCadastrados] = useState([]);
 
+    // 1. Carrega os dados iniciais (listas e produtos) quando o app abre
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -15,7 +16,7 @@ export const ListasProvider = ({ children }) => {
                     fetch(`${API_URL}/listas`),
                     fetch(`${API_URL}/produtos_cadastrados`)
                 ]);
-                
+
                 const listasData = await listasRes.json();
                 const produtosData = await produtosRes.json();
 
@@ -27,81 +28,10 @@ export const ListasProvider = ({ children }) => {
             }
         };
         fetchData();
-    }, []); 
+    }, []);
 
-    const adicionarNovaLista = async (novaListaData) => {
-        try {
-            const response = await fetch(`${API_URL}/listas`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(novaListaData),
-            });
-            const data = await response.json();
-            setTodasAsListas(prevListas => [...prevListas, data]);
-        } catch (error) {
-            console.error("Falha ao adicionar lista:", error);
-        }
-    };
-
-    const excluirLista = async (listaId) => {
-        try {
-            await fetch(`${API_URL}/listas/${listaId}`, { method: 'DELETE' });
-            setTodasAsListas(prevListas => prevListas.filter(lista => lista.id !== listaId));
-        } catch (error) {
-            console.error("Falha ao excluir lista:", error);
-        }
-    };
-
-    const atualizarItensDaLista = async (listaId, novosItens) => {
-        const listaParaAtualizar = todasAsListas.find(l => l.id === listaId);
-        if (!listaParaAtualizar) return;
-        
-        const bodyAtualizado = { ...listaParaAtualizar, itens: novosItens };
-
-        try {
-            const response = await fetch(`${API_URL}/listas/${listaId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bodyAtualizado),
-            });
-            const data = await response.json(); 
-            setTodasAsListas(prevListas =>
-                prevListas.map(lista => (lista.id === listaId ? data : lista))
-            );
-        } catch (error) {
-            console.error("Falha ao atualizar itens:", error);
-        }
-    };
-    
-
-    const editarLista = async (listaId, dadosAtualizados) => {
-   
-        const listaParaAtualizar = todasAsListas.find(l => l.id === listaId);
-        if (!listaParaAtualizar) return;
-
-        // Mescla a lista antiga com os dados novos
-        const bodyAtualizado = { ...listaParaAtualizar, ...dadosAtualizados };
-
-        try {
-            const response = await fetch(`${API_URL}/listas/${listaId}`, {
-                method: 'PUT', // PUT substitui o objeto inteiro
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bodyAtualizado),
-            });
-            const data = await response.json(); 
-            
-            // Atualiza o estado local
-            setTodasAsListas(prevListas =>
-                prevListas.map(lista =>
-                    lista.id === listaId ? data : lista
-                )
-            );
-        } catch (error) {
-            console.error("Falha ao editar lista:", error);
-        }
-    };
-    
-    // --- Função de PRODUTOS ---
+    // 2. A ÚNICA função de API que fica aqui é a de PRODUTOS,
+    // pois ela afeta o estado global 'produtosCadastrados'.
     const adicionarNovoProdutoGlobal = async (nomeProduto) => {
         const novoProduto = { name: nomeProduto };
         try {
@@ -110,27 +40,31 @@ export const ListasProvider = ({ children }) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(novoProduto),
             });
-            const data = await response.json(); 
+            const data = await response.json();
+            // Atualiza o estado global de produtos
             setProdutosCadastrados(prev => [...prev, data]);
-            return data; 
+            return data;
         } catch (error) {
             console.error("Falha ao adicionar produto global:", error);
             return null;
         }
     };
 
-    const value = {
+    // 3. Note que 'adicionarNovaLista', 'excluirLista', etc. SAÍRAM DAQUI.
+    // Nós exportamos o 'setTodasAsListas' para que os componentes
+    // possam atualizar o estado global eles mesmos.
+    const providerValue = useMemo(() => ({
         todasAsListas,
-        adicionarNovaLista,
-        excluirLista,
-        editarLista, 
-        atualizarItensDaLista,
-        produtosCadastrados, 
-        adicionarNovoProdutoGlobal 
-    };
+        setTodasAsListas,
+        produtosCadastrados,
+        setProdutosCadastrados,
+        adicionarNovoProdutoGlobal
+        // 3. Adicione os estados na lista de dependências
+    }), [todasAsListas, produtosCadastrados]);
 
     return (
-        <ListasContext.Provider value={value}>
+        // 4. Passe o "providerValue" memoizado aqui
+        <ListasContext.Provider value={providerValue}>
             {children}
         </ListasContext.Provider>
     );

@@ -1,12 +1,63 @@
 {
   "listas": [
     {
-      "id": "0379",
+      "id": "78ce",
       "nome": "lista 1",
       "itens": [
         {
+          "id": "8",
+          "name": "desinfetante",
+          "quantidade": 1,
+          "comprado": true
+        },
+        {
           "id": "64f2",
           "name": "feijão",
+          "quantidade": 1,
+          "comprado": true
+        },
+        {
+          "id": "temp_1762204748334",
+          "name": "t",
+          "isNovo": true,
+          "quantidade": 1,
+          "comprado": true
+        },
+        {
+          "id": "2",
+          "name": "Pão de Forma",
+          "quantidade": 1,
+          "comprado": true
+        },
+        {
+          "id": "temp_1762204786873",
+          "name": "td",
+          "isNovo": true,
+          "quantidade": 1,
+          "comprado": false
+        }
+      ]
+    },
+    {
+      "id": "8fa3",
+      "nome": "compras de quinta-feira",
+      "itens": [
+        {
+          "id": "8",
+          "name": "desinfetante",
+          "quantidade": 1,
+          "comprado": false
+        },
+        {
+          "id": "64f2",
+          "name": "feijão",
+          "quantidade": 1,
+          "comprado": false
+        },
+        {
+          "id": "temp_1762205252508",
+          "name": "ff",
+          "isNovo": true,
           "quantidade": 1,
           "comprado": false
         }
@@ -61,6 +112,30 @@
     {
       "id": "1b92",
       "name": "agua sanitária"
+    },
+    {
+      "id": "c4de",
+      "name": "teste 3"
+    },
+    {
+      "id": "c5d3",
+      "name": "vasspura"
+    },
+    {
+      "id": "9c74",
+      "name": "vassoura"
+    },
+    {
+      "id": "0e8f",
+      "name": "a"
+    },
+    {
+      "id": "841c",
+      "name": "teste4"
+    },
+    {
+      "id": "21d9",
+      "name": "gg"
     }
   ]
 }
